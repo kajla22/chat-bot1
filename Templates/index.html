@@ -1,46 +1,183 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>AI Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <style>
-        body { font-family: Arial, sans-serif; margin: 50px; }
-        #chatbox { border: 1px solid #ccc; padding: 10px; width: 400px; height: 400px; overflow-y: scroll; }
-        .user { color: blue; }
-        .bot { color: green; }
-        #message { width: 300px; }
-        button { padding: 5px 10px; }
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+
+        .chat-container {
+            background: #ffffff;
+            width: 420px;
+            max-width: 95%;
+            height: 600px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .chatbox {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f4f6fb;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .user {
+            background: #4facfe;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot {
+            background: #e5e7eb;
+            color: #111827;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .typing {
+            font-style: italic;
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 12px;
+            border-top: 1px solid #e5e7eb;
+            background: #ffffff;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 20px;
+            border: 1px solid #d1d5db;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-input button {
+            margin-left: 10px;
+            background: #4facfe;
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .chat-input button:hover {
+            background: #2563eb;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
-    <h1>AI Chatbot</h1>
-    <div id="chatbox"></div>
-    <br>
-    <input type="text" id="message" placeholder="Type your message here">
-    <button onclick="sendMessage()">Send</button>
 
-    <script>
-        async function sendMessage() {
-            const messageInput = document.getElementById("message");
-            const message = messageInput.value;
-            if (!message) return;
+<div class="chat-container">
+    <div class="chat-header">🤖 AI Chatbot</div>
 
-            // Display user message
-            const chatbox = document.getElementById("chatbox");
-            chatbox.innerHTML += `<p class="user"><strong>You:</strong> ${message}</p>`;
+    <div id="chatbox" class="chatbox"></div>
 
-            // Send message to Flask /chat route
-            const response = await fetch("/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `message=${encodeURIComponent(message)}`
-            });
+    <div class="chat-input">
+        <input type="text" id="message" placeholder="Type your message..." onkeypress="handleEnter(event)">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
 
-            const botReply = await response.text();
-            chatbox.innerHTML += `<p class="bot"><strong>Bot:</strong> ${botReply}</p>`;
+<script>
+    async function sendMessage() {
+        const input = document.getElementById("message");
+        const message = input.value.trim();
+        if (!message) return;
 
-            chatbox.scrollTop = chatbox.scrollHeight;
-            messageInput.value = "";
+        const chatbox = document.getElementById("chatbox");
+
+        // User message
+        const userMsg = document.createElement("div");
+        userMsg.className = "message user";
+        userMsg.innerText = message;
+        chatbox.appendChild(userMsg);
+
+        chatbox.scrollTop = chatbox.scrollHeight;
+        input.value = "";
+
+        // Typing indicator
+        const typing = document.createElement("div");
+        typing.className = "typing";
+        typing.id = "typing";
+        typing.innerText = "Bot is typing...";
+        chatbox.appendChild(typing);
+        chatbox.scrollTop = chatbox.scrollHeight;
+
+        // Call backend
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `message=${encodeURIComponent(message)}`
+        });
+
+        const botReply = await response.text();
+
+        // Remove typing indicator
+        typing.remove();
+
+        // Bot message
+        const botMsg = document.createElement("div");
+        botMsg.className = "message bot";
+        botMsg.innerText = botReply;
+        chatbox.appendChild(botMsg);
+
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function handleEnter(event) {
+        if (event.key === "Enter") {
+            sendMessage();
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
